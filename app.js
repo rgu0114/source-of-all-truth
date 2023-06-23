@@ -9,6 +9,8 @@ import {
 } from 'discord-interactions';
 import { VerifyDiscordRequest, getRandomEmoji, DiscordRequest } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
+import fetch from 'node-fetch';
+import generate from './generate.js'
 
 // Create an express app
 const app = express();
@@ -16,9 +18,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 // Parse request body and verifies incoming requests using discord-interactions package
 app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
-
-// Store for in-progress games. In production, you'd want to use a DB
-const activeGames = {};
 
 /**
  * Interactions endpoint URL where Discord will send HTTP requests
@@ -52,6 +51,37 @@ app.post('/interactions', async function (req, res) {
         },
       });
     }
+
+    if (name === 'ask') {
+      try {
+        const response = await generate( {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt: req.query }),
+        });
+  
+        const data = await response.json();
+        if (response.status !== 200) {
+          throw data.error || new Error(`Request failed with status ${response.status}`);
+        }
+        
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: 'Now connected with Chat GPT :)',
+          },
+        });
+        
+      } catch(error) {
+        // Consider implementing your own error handling logic here
+        console.error(error);
+      }
+
+      
+    }
+
     // "challenge" command
     if (name === 'challenge' && id) {
       const userId = req.body.member.user.id;

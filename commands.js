@@ -24,22 +24,15 @@ const TEST_COMMAND = {
   type: 1,
 };
 
-// Command containing options
-const CHALLENGE_COMMAND = {
-  name: 'challenge',
-  description: 'Challenge to a match of rock paper scissors',
-  options: [
-    {
-      type: 3,
-      name: 'object',
-      description: 'Pick your object',
-      required: true,
-      choices: createCommandChoices(),
-    },
-  ],
+// Ask Chat GPT command
+const ASK_COMMAND = {
+  name: 'ask',
+  description: 'Ask Chat GPT',
   type: 1,
-};
+}
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND];
+
+
+const ALL_COMMANDS = [TEST_COMMAND, ASK_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
