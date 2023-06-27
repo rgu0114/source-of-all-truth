@@ -10,7 +10,8 @@ import {
 import { VerifyDiscordRequest, getRandomEmoji, DiscordRequest } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
 import fetch from 'node-fetch';
-import generate from './generate.js'
+import { generate } from './api/generate.js'
+import { help } from './api/help.js'
 
 // Create an express app
 const app = express();
@@ -52,25 +53,36 @@ app.post('/interactions', async function (req, res) {
       });
     }
 
-    if (name === 'ask') {
+    // "help" command
+    if (name === 'help') {
       try {
-        const response = await generate( {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await help()
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: response,
           },
-          body: JSON.stringify({ prompt: req.query }),
         });
-  
-        const data = await response.json();
-        if (response.status !== 200) {
-          throw data.error || new Error(`Request failed with status ${response.status}`);
-        }
+        
+      } catch (error) {
+        console.log(error)
+      }
+    };
+
+    // "ask" command
+    if (name === 'ask') {
+      const req = {
+        method: "POST",
+        body: JSON.stringify({ input: "Why is the sky blue?" }),
+      };
+      
+      try {
+        const response = await generate(req)
         
         return res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content: 'Now connected with Chat GPT :)',
+            content: response.result,
           },
         });
         

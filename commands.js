@@ -24,6 +24,12 @@ const TEST_COMMAND = {
   type: 1,
 };
 
+const HELP_COMMAND = {
+  name: 'help',
+  description: 'Ask for help',
+  type: 1,
+}
+
 // Ask Chat GPT command
 const ASK_COMMAND = {
   name: 'ask',
@@ -33,6 +39,6 @@ const ASK_COMMAND = {
 
 
 
-const ALL_COMMANDS = [TEST_COMMAND, ASK_COMMAND];
+const ALL_COMMANDS = [TEST_COMMAND, HELP_COMMAND, ASK_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
