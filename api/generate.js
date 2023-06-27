@@ -20,7 +20,8 @@ export async function generate (req, res) {
       model: "text-davinci-003",
       prompt: generatePrompt(req.body.input),
       temperature: 0.6,
-    });
+      max_tokens: 500,
+    })
     return { result: completion.data.choices[0].text };
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
@@ -39,5 +40,6 @@ export async function generate (req, res) {
 }
 
 function generatePrompt(input) {
-  return `Please respond to the following prompt humorously: ${input}`;
+  console.log(input)
+  return `Please respond to the following prompt humorously, and limit your response to 500 tokens: ${input}`;
 }

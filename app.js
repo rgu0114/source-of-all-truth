@@ -73,7 +73,7 @@ app.post('/interactions', async function (req, res) {
     if (name === 'ask') {
       const req = {
         method: "POST",
-        body: JSON.stringify({ input: "Why is the sky blue?" }),
+        body: { input: "Why is the sky blue?" },
       };
       
       try {
