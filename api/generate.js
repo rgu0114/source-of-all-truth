@@ -14,16 +14,33 @@ export async function generate (req, res) {
     };
   }
 
+  let timeoutDuration = 2000;
+  let defaultResponse = { result: "OpenAI is thinking deeply about this one..." };
 
   try {
-    const completion = await openai.createCompletion({
+    const completionPromise = openai.createCompletion({
       model: "text-davinci-003",
       prompt: generatePrompt(req.body.input),
       temperature: 0.6,
       max_tokens: 500,
     })
-    return { result: completion.data.choices[0].text };
-  } catch(error) {
+
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(defaultResponse);
+      }, timeoutDuration);
+    });
+
+    const completion = await Promise.race([completionPromise, timeoutPromise]);
+    
+    if (completion.result) {
+      console.log("returing default response")
+      return defaultResponse;
+    } else {
+      return { result: completion.data.choices[0].text};
+    }
+
+  } catch (error) {
     // Consider adjusting the error handling logic for your use case
     if (error.response) {
       console.error(error.response.status, error.response.data);
