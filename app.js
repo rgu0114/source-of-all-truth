@@ -7,6 +7,8 @@ import {
 import { VerifyDiscordRequest, getRandomEmoji } from './utils.js';
 import { generate } from './api/generate.js'
 import { help } from './api/help.js'
+import { Client, IntentsBitField } from 'discord.js';
+import { Configuration, OpenAIApi } from 'openai';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -84,3 +86,61 @@ app.post('/interactions', async function (req, res) {
 app.listen(PORT, () => {
   console.log('Listening on port', PORT);
 });
+
+
+// Initializing a new bot instance
+const client = new Client({
+  intents: [
+    IntentsBitField.Flags.Guilds,
+    IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.MessageContent,
+  ]
+})
+
+client.on('ready', () => {
+  console.log("The bot is now online.")
+})
+
+const configuration = new Configuration ({
+  apiKey: process.env.API_KEY,
+})
+
+const openai = new OpenAIApi(configuration);
+
+client.on('messageCreate', async (message) => {
+  // Ignores msgs sent by bots
+  if (message.author.bot) return;
+  // Ignores msgs not sent in designated channel
+  if (message.channel.id !== process.env.CHANNEL_ID) return;
+  // Ignores msgs that don't start with the slash command
+  if (!message.content.startsWith('/chat ')) return;
+
+  let conversationLog = [{ role: 'system', content: "You are a funny sarcastic chatbot. You regularly quote star wars memes, history memes, and are occasionally extremely rude. "}];
+
+  await message.channel.sendTyping();
+
+  let prevMessages = await message.channel.messages.fetch({ limit: 15});
+  prevMessages.reverse();
+
+  prevMessages.forEach((msg) => {
+    if (!message.content.startsWith('/chat ')) return;
+    if (msg.author.id !== client.user.id && message.author.bot) return;
+    if (msg.author.id !== message.author.id) return;
+
+    conversationLog.push({
+      role: 'user', 
+      content: msg.content,
+    })
+  })
+
+  console.log("conversation log", conversationLog)
+
+  const result = await openai.createChatCompletion({
+    model: 'gpt-3.5-turbo',
+    messages: conversationLog,
+  })
+
+  message.reply(result.data.choices[0].message)
+})
+
+client.login(process.env.TOKEN);
