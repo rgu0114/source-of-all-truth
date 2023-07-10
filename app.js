@@ -9,6 +9,7 @@ import { generate } from './api/generate.js'
 import { help } from './api/help.js'
 import { Client, IntentsBitField } from 'discord.js';
 import { Configuration, OpenAIApi } from 'openai';
+import { getInteractionsResponse } from './api/interactions.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,74 +20,33 @@ app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
  */
 app.post('/interactions', async function (req, res) {
 
-  const { type, id, data } = req.body;
+  const { type } = req.body;
 
   if (type === InteractionType.PING) {
     return res.send({ type: InteractionResponseType.PONG });
   }
-
-  if (type === InteractionType.APPLICATION_COMMAND) {
-    const { name } = data;
-
-    // "test" command
-    if (name === 'test') {
-      // Send a message into the channel where command was triggered from
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          // Fetches a random emoji to send from a helper function
-          content: 'hello world ' + getRandomEmoji(),
-        },
-      });
-    }
-
-    // "help" command
-    if (name === 'help') {
-      try {
-        const response = await help()
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            content: response,
-          },
-        });
+  
+  try {
+    const response = await getInteractionsResponse(req)
         
-      } catch (error) {
-        console.log(error)
-      }
-    };
-
-    // "ask" command
-    if (name === 'ask') {
-      console.log(data)
-      const request = {
-        method: "POST",
-        body: { input: "testing" },
-      };
-      
-      try {
-        const response = await generate(request)
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        content: response.result,
+      },
+    });
         
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            content: response.result,
-          },
-        });
-        
-      } catch(error) {
-        // Consider implementing your own error handling logic here
-        console.error(error);
-      }
-
-    }
+  } catch(error) {
+      console.error(error);
   }
-});
+}
+);
 
 app.listen(PORT, () => {
   console.log('Listening on port', PORT);
 });
 
+console.log('initialized express app');
 
 // Initializing a new bot instance
 const client = new Client({
@@ -97,12 +57,14 @@ const client = new Client({
   ]
 })
 
+console.log('initialized client')
+
 client.on('ready', () => {
   console.log("The bot is now online.")
 })
 
 const configuration = new Configuration ({
-  apiKey: process.env.API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
 const openai = new OpenAIApi(configuration);
@@ -111,7 +73,7 @@ client.on('messageCreate', async (message) => {
   // Ignores msgs sent by bots
   if (message.author.bot) return;
   // Ignores msgs not sent in designated channel
-  if (message.channel.id !== process.env.CHANNEL_ID) return;
+  // if (message.channel.id !== process.env.CHANNEL_ID) return;
   // Ignores msgs that don't start with the slash command
   if (!message.content.startsWith('/chat ')) return;
 
@@ -143,4 +105,4 @@ client.on('messageCreate', async (message) => {
   message.reply(result.data.choices[0].message)
 })
 
-client.login(process.env.TOKEN);
+client.login(process.env.DISCORD_TOKEN);
