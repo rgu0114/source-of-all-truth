@@ -9,6 +9,7 @@ import { Client, IntentsBitField } from 'discord.js';
 import { Configuration, OpenAIApi } from 'openai';
 import { getInteractionsResponse } from './api/interactions.js';
 import { chat } from './api/chat.js'
+import { brawlstats } from './api/brawlstats.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -76,9 +77,13 @@ client.on('messageCreate', async (message) => {
   // Ignores msgs not sent in designated channel
   // if (message.channel.id !== process.env.CHANNEL_ID) return;
   // Ignores msgs that don't start with the slash command
-  if (!message.content.startsWith('/chat ')) return;
+  if (!(message.content.startsWith('/chat ') || message.content.startsWith('/brawlstats '))) return;
 
-  chat(message, client, openai);
+  if (message.content.startsWith('/chat ')) {
+    chat(message, client, openai);
+  } else {
+    brawlstats(message, client);
+  }
 })
 
 client.login(process.env.DISCORD_TOKEN);
